@@ -33,7 +33,7 @@ reorder <- function(mat, p_reorder = 0){
 function(input, output, session) {
   
   #weights matrix upload
-  data <- reactive({
+  wmat <- reactive({
     req(input$upload)
     
     ext <- tools::file_ext(input$upload$name)
@@ -44,7 +44,7 @@ function(input, output, session) {
   
   #notification to allow users to check dimensions of matrix
   observeEvent(input$upload, {
-    showNotification(paste0("Success! You have uploaded a ", nrow(data()), "x", ncol(data()), " weights matrix"), type = "warning")
+    showNotification(paste0("Success! You have uploaded a ", nrow(wmat()), "x", ncol(wmat()), " weights matrix"), type = "warning")
   })
   
   #simulation triggered by button press
@@ -76,15 +76,14 @@ function(input, output, session) {
         library("psychonetrics")
         library("dplyr")
         library("qgraph")
-        library("shiny")
         
         # Generate an original dataset:  
-        data_original <- ggmGenerator()(n_original, wmat)
+        data_original <- ggmGenerator()(n_original, wmat())
         
         # Little code to enforce proper network structure:
         n_test <- 0
         repeat{
-          wmat2 <- reorder(wmat, p_reorder)
+          wmat2 <- reorder(wmat(), p_reorder)
           ev <- eigen(diag(ncol(wmat2))-wmat2)$values
           if (all(ev > 0)) break
           if (n_test > 10) stop("No positive definite network to be made")
@@ -111,7 +110,7 @@ function(input, output, session) {
         source("./scripts/compareNetworks.R")
         
         # Replication network for semi-confirmatory:
-        fit_replication@fitmeasures <- c(fit_replication@fitmeasures,CompareNetworks(wmat[41,-41], net_replication[41,-41]))
+        fit_replication@fitmeasures <- c(fit_replication@fitmeasures,CompareNetworks(wmat()[41,-41], net_replication[41,-41]))
         
         # Label the results:
         fit_replication@fitmeasures$type <- "semi"
