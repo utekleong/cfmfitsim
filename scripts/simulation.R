@@ -1,6 +1,7 @@
 #################################################################
 ##                  Loading packages and data                  ##
 #################################################################
+set.seed(4242)
 
 # Loading required packages
 library("parSim")
@@ -105,68 +106,3 @@ simres <- parSim(
 
 # Save results:
 write.csv(simres,"./data/simres.csv")
-
-# Convert to long format:
-longer <- simres %>% pivot_longer(logl:false_neg, names_to = "metric")
-longer$n_replication_factor <- factor(longer$n_replication,levels=sort(unique(longer$n_replication)),
-                                         labels = paste0("n = ",sort(unique(longer$n_replication))))
-
-# To uppercase:
-longer$metric <- toupper(longer$metric)
-
-# Label type:
-longer$type <- factor(longer$type, levels = "semi", labels = "semi confirmatory")
-
-# Label reorder:
-longer$p_reorder <- factor(longer$p_reorder, levels = sort(unique(longer$p_reorder)), labels = paste0("P(reorder) = ",sort(unique(longer$p_reorder))))
-
-# Only relevant metrics:
-# longer <- longer %>% filter(metric %in% c("RMSEA","CFI","TLI"))
-# # sub_semi <- longer %>% filter(metric %in% c("RMSEA","CFI","TLI"), type == "semi")
-
-sub_CFI <- longer %>% filter(metric=="CFI")
-sub_RMSEA <- longer %>% filter(metric=="RMSEA")
-
-#################################################################
-##                            Plots                            ##
-#################################################################
-
-# CFI:
-p1 <- ggplot(sub_CFI, aes(x = n_replication_factor, y = value)) + 
-  facet_grid(type ~ p_reorder) + geom_boxplot() + theme_bw() + 
-  scale_y_continuous(breaks = seq(-10,10,by=0.1), minor_breaks =  seq(-10,10,by=0.05)) + 
-  geom_hline(yintercept=1) + 
-  geom_hline(yintercept=0.95, lty = 2) + geom_hline(yintercept=0.9, lty = 3) + 
-  ylab("") + xlab("Replication set sample size") + 
-  ggtitle("Bentler's Comparative Fit Index (CFI)","Typical SEM interpretation: > 0.9 adequate fit, > 0.95 good fit.") + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-# RMSEA:
-p2 <- ggplot(sub_RMSEA, aes(x = n_replication_factor, y = value)) + 
-  facet_grid(type ~ p_reorder) + geom_boxplot() + theme_bw() + 
-  scale_y_continuous(breaks = seq(-10,10,by=0.1), minor_breaks =  seq(-10,10,by=0.05)) + 
-  geom_hline(yintercept=0) + 
-  geom_hline(yintercept=0.05, lty = 2) + geom_hline(yintercept=0.08, lty = 3) + 
-  ylab("") + xlab("Replication set sample size") + 
-  ggtitle("Root Mean Square Error of Approximation (RMSEA)","Typical SEM interpretation: < 0.08 adequate fit, < 0.05 good fit.")  + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-# # Network performance:
-# net_semi <- longer %>% filter(type == "semi confirmatory", metric %in% c("SENSITIVITY","SPECIFICITY","CORRELATION")) %>% mutate(metric = tolower(metric))
-# 
-# # Plots:
-# p3 <- ggplot(net_semi, aes(x = n_replication_factor, y = value)) + 
-#   facet_grid(metric ~ p_reorder) + geom_boxplot() + theme_bw() + 
-#   scale_y_continuous(breaks = seq(-10,10,by=0.1), minor_breaks =  seq(-10,10,by=0.05), limits = c(0,1)) + 
-#   ylab("") + xlab("Replication set sample size") + 
-#   ggtitle("TPESS edge recovery - semi confirmatory model","(thresholded at alpha = 0.05).") + 
-#   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-# Print to PDF:
-pdf("plots.pdf",width=1920/1080 * 7,height=7)
-print(p1)
-print(p2)
-# print(p3)
-dev.off()
-
-
